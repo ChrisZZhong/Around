@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"reflect"
 	"strconv"
+
+	elastic "gopkg.in/olivere/elastic.v3"
 )
 
 type Location struct {
@@ -22,6 +25,8 @@ type Post struct {
 
 const (
 	DISTANCE = "200km"
+	ES_URL   = "http://104.154.162.52:9200"
+	INDEX    = "around"
 )
 
 func main() {
@@ -38,7 +43,6 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
 	var p Post
 	if err := decoder.Decode(&p); err != nil {
 		panic(err)
-		return
 	}
 
 	fmt.Fprintf(w, "Post received: %s\n", p.Message)
@@ -53,25 +57,39 @@ func handlerSearch(w http.ResponseWriter, r *http.Request) {
 		ran = val + "km"
 	}
 
-	fmt.Println("range is ", ran)
+	fmt.Printf("Search received: %f %f %s\n", lat, lon, ran)
 
-	// Return a fake post
-	p := &Post{
-		User:    "1111",
-		Message: "一生必去的100个地方",
-		Location: Location{
-			Lat: lat,
-			Lon: lon,
-		},
-	}
-
-	js, err := json.Marshal(p)
+	client, err := elastic.NewClient(elastic.SetURL(ES_URL), elastic.SetSniff(false))
 	if err != nil {
 		panic(err)
+	}
 
+	q := elastic.NewGeoDistanceQuery("location")
+	q = q.Distance(ran).Lat(lat).Lon(lon)
+
+	searchResult, err := client.Search().Index(INDEX).Query(q).Pretty(true).Do()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("Query took %d milliseconds\n", searchResult.TookInMillis)
+	fmt.Printf("Found a total of %d posts\n", searchResult.TotalHits())
+
+	var typ Post
+	var ps []Post
+	for _, item := range searchResult.Each(reflect.TypeOf(typ)) {
+		p := item.(Post)
+		fmt.Printf("Post by %s: %s at lat %v and lon %v\n", p.User, p.Message, p.Location.Lat, p.Location.Lon)
+
+		ps = append(ps, p)
+	}
+
+	js, err := json.Marshal(ps)
+	if err != nil {
+		panic(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Write(js)
-
 }
