@@ -32,7 +32,7 @@ const (
 	//PROJECT_ID = "around-xxx"
 	//BT_INSTANCE = "around-post"
 	// Needs to update this URL if you deploy it to cloud.
-	ES_URL = "http://104.154.162.52:9200"
+	ES_URL = "http://34.70.37.202:9200"
 	// ES_URL = "http://localhost:9200"
 )
 
@@ -96,7 +96,6 @@ func saveToES(p *Post, id string) {
 	es_client, err := elastic.NewClient(elastic.SetURL(ES_URL), elastic.SetSniff(false))
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	// Save it to index
@@ -109,7 +108,6 @@ func saveToES(p *Post, id string) {
 		Do()
 	if err != nil {
 		panic(err)
-		return
 	}
 
 	fmt.Printf("Post is saved to Index: %s\n", p.Message)
