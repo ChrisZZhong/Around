@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"strconv"
 
+	"github.com/pborman/uuid"
 	elastic "gopkg.in/olivere/elastic.v3"
 )
 
@@ -24,12 +25,50 @@ type Post struct {
 }
 
 const (
-	DISTANCE = "200km"
-	ES_URL   = "http://104.154.162.52:9200"
 	INDEX    = "around"
+	TYPE     = "post"
+	DISTANCE = "200km"
+	// Needs to update
+	//PROJECT_ID = "around-xxx"
+	//BT_INSTANCE = "around-post"
+	// Needs to update this URL if you deploy it to cloud.
+	ES_URL = "http://104.154.162.52:9200"
+	// ES_URL = "http://localhost:9200"
 )
 
 func main() {
+	// Create a client
+	client, err := elastic.NewClient(elastic.SetURL(ES_URL), elastic.SetSniff(false))
+	if err != nil {
+		panic(err)
+	}
+
+	// Use the IndexExists service to check if a specified index exists.
+	exists, err := client.IndexExists(INDEX).Do()
+	if err != nil {
+		panic(err)
+	}
+	if !exists {
+		// Create a new index.
+		mapping := `{
+				"mappings":{
+					"post":{
+						"properties":{
+							"location":{
+								"type":"geo_point"
+							}
+						}
+					}
+				}
+			}`
+		// map the location struct to geoPoint
+		_, err := client.CreateIndex(INDEX).Body(mapping).Do()
+		if err != nil {
+			// Handle error
+			panic(err)
+		}
+	}
+
 	fmt.Println("started-service")
 	http.HandleFunc("/post", handlerPost)
 	http.HandleFunc("/search", handlerSearch)
@@ -46,7 +85,37 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintf(w, "Post received: %s\n", p.Message)
+	// unique id
+	id := uuid.New()
+	// Save to ES.
+	saveToES(&p, id)
+
 }
+func saveToES(p *Post, id string) {
+	// Create a client
+	es_client, err := elastic.NewClient(elastic.SetURL(ES_URL), elastic.SetSniff(false))
+	if err != nil {
+		panic(err)
+		return
+	}
+
+	// Save it to index
+	_, err = es_client.Index().
+		Index(INDEX).
+		Type(TYPE).
+		Id(id).
+		BodyJson(p).
+		Refresh(true).
+		Do()
+	if err != nil {
+		panic(err)
+		return
+	}
+
+	fmt.Printf("Post is saved to Index: %s\n", p.Message)
+
+}
+
 func handlerSearch(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Received one request for search")
 	lat, _ := strconv.ParseFloat(r.URL.Query().Get("lat"), 64)
@@ -78,7 +147,7 @@ func handlerSearch(w http.ResponseWriter, r *http.Request) {
 	var typ Post
 	var ps []Post
 	for _, item := range searchResult.Each(reflect.TypeOf(typ)) {
-		p := item.(Post)
+		p := item.(Post) // p = (Post) item
 		fmt.Printf("Post by %s: %s at lat %v and lon %v\n", p.User, p.Message, p.Location.Lat, p.Location.Lon)
 
 		ps = append(ps, p)
