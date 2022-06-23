@@ -25,7 +25,7 @@ type Location struct {
 type Post struct {
 	// `json:"user"` is for the json parsing of this User field. Otherwise, by default it's 'User'.
 	User     string   `json:"user"`
-	Url      string   `json:""`
+	Url      string   `json:"url"`
 	Message  string   `json:"message"`
 	Location Location `json:"location"`
 }
@@ -38,8 +38,7 @@ const (
 	//PROJECT_ID = "around-xxx"
 	//BT_INSTANCE = "around-post"
 	// Needs to update this URL if you deploy it to cloud.
-	ES_URL = "http://34.70.37.202:9200"
-	// ES_URL = "http://localhost:9200"
+	ES_URL      = "http://35.225.132.181:9200"
 	BUCKET_NAME = "post-image-353920"
 )
 
@@ -137,7 +136,7 @@ func handlerPost(w http.ResponseWriter, r *http.Request) {
 
 }
 
-// save to GCS bucket
+// Save an image to GCS.
 func saveToGCS(ctx context.Context, r io.Reader, bucketName, name string) (*storage.ObjectHandle, *storage.ObjectAttrs, error) {
 	client, err := storage.NewClient(ctx)
 	if err != nil {
@@ -160,14 +159,15 @@ func saveToGCS(ctx context.Context, r io.Reader, bucketName, name string) (*stor
 		return nil, nil, err
 	}
 
-	if err := obj.ACL().Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
-		return nil, nil, err
-	}
+	// if err := obj.ACL().Set(ctx, storage.AllUsers, storage.RoleReader); err != nil {
+	// 	return nil, nil, err
+	// }
+
+	fmt.Println("success")
 
 	attrs, err := obj.Attrs(ctx)
 	fmt.Printf("Post is saved to GCS: %s\n", attrs.MediaLink)
 	return obj, attrs, err
-
 }
 
 func saveToES(p *Post, id string) {
@@ -228,7 +228,9 @@ func handlerSearch(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("Post by %s: %s at lat %v and lon %v\n", p.User, p.Message, p.Location.Lat, p.Location.Lon)
 		if !containsFilteredWords(&p.Message) {
 			ps = append(ps, p)
+			// fmt.Println(ps[0].Location)
 		}
+		// ps = append(ps, p)
 	}
 
 	js, err := json.Marshal(ps)
@@ -244,8 +246,8 @@ func handlerSearch(w http.ResponseWriter, r *http.Request) {
 func containsFilteredWords(s *string) bool {
 	filteredWords := []string{
 		"fuck",
-		"100",
 	}
+	fmt.Println(*s)
 	for _, word := range filteredWords {
 		if strings.Contains(*s, word) {
 			return true
