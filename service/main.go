@@ -30,8 +30,8 @@ const (
 	//PROJECT_ID = "around-xxx"
 	//BT_INSTANCE = "around-post"
 	// Needs to update this URL if you deploy it to cloud.
-	ES_URL      = "http://34.66.41.172:9200"
-	BUCKET_NAME = "post-images-354422"
+	ES_URL      = "http://35.202.49.250:9200"
+	BUCKET_NAME = "post-images-3544222"
 )
 
 type Location struct {
@@ -187,7 +187,7 @@ func saveToGCS(ctx context.Context, r io.Reader, bucketName, name string) (*stor
 		return nil, nil, err
 	}
 	defer client.Close()
-
+	fmt.Println("success")
 	bucket := client.Bucket(bucketName)
 	// Next check if the bucket exists
 	if _, err = bucket.Attrs(ctx); err != nil {
