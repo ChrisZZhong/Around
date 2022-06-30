@@ -57,6 +57,7 @@ func checkUser(username, password string) bool {
 	return false
 }
 
+// add user adds a new user
 // Add a new user. Return true if successfully.
 func addUser(user User) bool {
 	es_client, err := elastic.NewClient(elastic.SetURL(ES_URL), elastic.SetSniff(false))
@@ -95,6 +96,8 @@ func addUser(user User) bool {
 
 	return true
 }
+
+// If signup is successful, a new session is created.
 func signupHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("Received one signup request")
 
@@ -102,6 +105,7 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 	var u User
 	if err := decoder.Decode(&u); err != nil {
 		panic(err)
+		return
 	}
 
 	if u.Username != "" && u.Password != "" && usernamePattern(u.Username) {
@@ -129,6 +133,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	var u User
 	if err := decoder.Decode(&u); err != nil {
 		panic(err)
+		return
 	}
 
 	if checkUser(u.Username, u.Password) {
