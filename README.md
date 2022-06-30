@@ -10,7 +10,7 @@ This is a Geo-index based social network allow users find interesting posts with
 [#Contect](#Contect)
 
 
-# Demo presentation:<a id="Demo">Demo</a>
+# Demo presentation:<a id="Demo"></a>
 <img src="./demo.gif" width="900">
 
 ## sign up
@@ -22,7 +22,7 @@ This is a Geo-index based social network allow users find interesting posts with
 ## maps:
 <img src="./maps.png" width="900">
 
-# Features:<a id="Features">Features</a>
+# Features:<a id="Features"></a>
 Front-end: React
 
 Back-end: Go, GAE
@@ -31,7 +31,7 @@ Data: GCE, BigTable, BigQuery, Google cloud dataflow(Java-maven)
 
 Authentication: Token based authentication
 
-# Dependencies: <a id="Dependencies">Dependencies</a>
+# Dependencies: <a id="Dependencies"></a>
 
 ## Utilized ElasticSearch (GCE) to provide geo-location based search functions such that users can search nearby posts within a distance
 <h2>Backend - Go</h2>
@@ -60,5 +60,5 @@ Authentication: Token based authentication
   <li>guava</li>
 </ul>  
 
-# Contect <a id="Contect">Contect:</a>
+# Contect <a id="Contect"></a>
 Email :  zzcjob397@gmail.com
